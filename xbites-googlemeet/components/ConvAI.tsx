@@ -54,7 +54,7 @@ export default function ConvAI() {
     const startTime = new Date();
     const conversation: ConversationRecord = {
       id,
-      agentId: process.env.AGENT_ID || 'default',
+      agentId: process.env.AGENT_ID || 'MHod1UjjSXgyi65Mwdmh',
       startTime,
     };
 
@@ -76,35 +76,10 @@ export default function ConvAI() {
     }
   };
 
-  const updateConversation = async () => {
-    if (!conversationId || !startTime) return;
-
-    const endTime = new Date();
-    const duration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
-    const transcript = messages.map(msg => `${msg.source}: ${msg.message}`).join('\n');
-
-    try {
-      const response = await fetch(`/api/conversations/${conversationId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          endTime,
-          duration,
-          transcript,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update conversation');
-      }
-    } catch (error) {
-      console.error('Error updating conversation:', error);
-    }
-  };
-
   const connectConversation = useCallback(async () => {
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setAudioStream(stream);
       
       const response = await fetch('/api/signed-url', {
         method: 'GET',
@@ -125,13 +100,39 @@ export default function ConvAI() {
   }, [conversation]);
 
   const disconnectConversation = useCallback(async () => {
+    const updateConversation = async () => {
+      if (!conversationId || !startTime) return;
+
+      const endTime = new Date();
+      const duration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+      const transcript = messages.map(msg => `${msg.source}: ${msg.message}`).join('\n');
+
+      try {
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endTime,
+            duration,
+            transcript,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update conversation');
+        }
+      } catch (error) {
+        console.error('Error updating conversation:', error);
+      }
+    };
+
     await conversation.endSession();
     setCurrentSpeaker(null);
     setIsMuted(false);
     await updateConversation();
     setConversationId(null);
     setStartTime(null);
-  }, [conversation, messages]);
+  }, [conversation, conversationId, startTime, messages]);
 
   useEffect(() => {
     return () => {

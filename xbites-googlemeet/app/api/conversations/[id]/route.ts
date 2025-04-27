@@ -1,14 +1,19 @@
-import { NextResponse } from 'next/server';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { NextResponse, NextRequest } from 'next/server';
 
 const EDGE_FUNCTION_URL = process.env.EDGE_FUNCTION_URL || 'https://xffcdowhfxeymthuddvy.supabase.co/functions/v1/conversations';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+export interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
 export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
-) {
+  request: NextRequest,
+  { params }: RouteParams
+): Promise<NextResponse> {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
     const updates = await request.json();
     
     const response = await fetch(`${EDGE_FUNCTION_URL}/${id}`, {
@@ -26,17 +31,18 @@ export async function PUT(
 
     const data = await response.json();
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
+  request: NextRequest,
+  { params }: RouteParams
+): Promise<NextResponse> {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
     const response = await fetch(`${EDGE_FUNCTION_URL}/${id}`, {
       method: 'GET',
       headers: {
@@ -51,7 +57,8 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-} 
+}
